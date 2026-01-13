@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "hardening/state.h"
+#include "protector_state.h"
 
 int main(void)
 {
