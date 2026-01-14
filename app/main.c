@@ -4,9 +4,9 @@
 int main(void)
 {
     if (hardening_poison)
-        printf("Running in degraded mode\n");
+        printf("Running in degraded mode\n"); // Обнаружена попытка дебага / взлома программы
     else
-        printf("Running normally\n");
+        printf("Running normally\n"); // Все ОК
 
     return 0;
 }

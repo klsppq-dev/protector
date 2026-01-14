@@ -23,3 +23,7 @@ set_target_properties(hardening PROPERTIES
     C_VISIBILITY_PRESET hidden
     VISIBILITY_INLINES_HIDDEN YES
 )
+
+# Для выключения логов закомментируйте эти две строки
+target_compile_definitions(hardcore PRIVATE PROTECTOR_LOG_ENABLED=1)
+target_compile_definitions(hardening PRIVATE PROTECTOR_LOG_ENABLED=1)

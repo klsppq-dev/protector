@@ -1,9 +1,5 @@
-#include "hardening.h"
-#include "protector_log.h"
-#include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include <stdlib.h>
 
 static uint32_t crc32_table[256] = {
@@ -83,30 +79,59 @@ static uint32_t crc32(const unsigned char *data, size_t length)
     return crc ^ 0xFFFFFFFF;
 }
 
-int integrity_check(uint32_t key, uint32_t correct_hash)
-{
-    int fd = open("/proc/self/exe", O_RDONLY);
-    if (fd < 0)
-        return 1;
 
-    struct stat st;
-    if (fstat(fd, &st) < 0) {
-        close(fd);
-        return 1;
-    }
+int main(int argc, char** argv) {
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s KEY FILE\n", argv[0]);
+    return 1;
+  }
 
-    unsigned char *buf = malloc(st.st_size);
-    if (!buf) {
-        close(fd);
-        return 1;
-    }
+  FILE *fd = fopen(argv[2], "rb");
+  if (!fd) {
+    fprintf(stderr, "Unable to open file at %s\n", argv[2]);
+    return 1;
+  }
 
-    read(fd, buf, st.st_size);
-    close(fd);
+  if (fseek(fd, 0, SEEK_END) != 0) {
+      fclose(fd);
+      perror("fseek failed");
+      return 1;
+  }
 
-    unsigned hash = crc32(buf, st.st_size) ^ key;
+  long size = ftell(fd);
+  if (size <= 0) {
+      fclose(fd);
+      perror("fclose failed");
+      return 1;
+  }
+
+  rewind(fd);
+
+  unsigned char *buf = malloc(size);
+  if (!buf) {
+      fclose(fd);
+      perror("malloc failed");
+      return 1;
+  }
+
+  if (fread(buf, 1, size, fd) != (size_t)size) {
+      free(buf);
+      fclose(fd);
+      perror("fread failed");
+      return 1;
+  }
+  fclose(fd);
+
+  uint32_t key = atoi(argv[1]);
+  if (key == 0) {
     free(buf);
-    PROTECTOR_LOG("[hardening] integrity check: computed hash: %d, actual hash: %d", hash, correct_hash);
+    perror("Invalid key");
+    return 1;
+  }
 
-    return hash != correct_hash;
+  uint32_t hash = crc32(buf, size) ^ key;
+  free(buf);
+  printf("%d\n", hash);
+
+  return 0;
 }

@@ -16,4 +16,7 @@ void hardcore_init(void)
 
     if (ptrace_debugger_check())
         hardening_poison = 1;
+
+    if (load_hardening())
+        hardening_poison = 1;
 }

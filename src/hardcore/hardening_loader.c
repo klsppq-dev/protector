@@ -1,30 +1,27 @@
 #include "hardcore.h"
-#include <stdio.h>
 #define _GNU_SOURCE
 #include <dlfcn.h>
-#include "protector_state.h"
+#include "protector_log.h"
 
-__attribute__((constructor))
-static void load_shared(void)
+int load_hardening(void)
 {
-    printf("[DEBUG] load_shared() constructor running\n");
+    PROTECTOR_LOG("[hardcore] load_shared() constructor running");
 
     void *h = dlopen("./libhardening.so", RTLD_NOW | RTLD_LOCAL);
     if (!h) {
-        fprintf(stderr, "dlopen failed: %s\n", dlerror());
-        hardening_poison = 1;
-        return;
+        PROTECTOR_LOG("[hardcore] dlopen failed: %s", dlerror());
+        return 1;
     }
 
-    printf("[DEBUG] libhardening.so loaded\n");
+    PROTECTOR_LOG("[hardcore] libhardening.so loaded");
 
     void (*init)(uint64_t) = dlsym(h, "hardening_init");
     if (!init) {
-        fprintf(stderr, "dlsym failed: %s\n", dlerror());
-        hardening_poison = 1;
-        return;
+        PROTECTOR_LOG("[hardcore] dlsym failed: %s", dlerror());
+        return 1;
     }
 
     init(hardcore_get_secret());
-    printf("[DEBUG] shared library initialized\n");
+    PROTECTOR_LOG("[hardcore] shared library initialized");
+    return 0;
 }
